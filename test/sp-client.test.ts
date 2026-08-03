@@ -40,6 +40,17 @@ describe('SuperProductivityClient', () => {
     expect(new Headers(init?.headers).get('authorization')).toBe('Bearer test-token');
   });
 
+  it('supports the released unauthenticated API when no token is configured', async () => {
+    const task = testTask();
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(successResponse([task]));
+    const client = new SuperProductivityClient(loadConfig({}), testLogger(), fetchMock);
+
+    await expect(client.listTasks()).resolves.toEqual([task]);
+
+    const [, init] = fetchMock.mock.calls[0] ?? [];
+    expect(new Headers(init?.headers).has('authorization')).toBe(false);
+  });
+
   it('maps official API errors to explicit application errors', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

@@ -84,13 +84,3 @@ export const loadConfig = (env: NodeJS.ProcessEnv = process.env): AppConfig => {
     logLevel: parseLogLevel(env.SP_LOG_LEVEL),
   };
 };
-
-export const requireApiToken = (config: AppConfig): string => {
-  if (!config.apiToken) {
-    throw new AppError(
-      'CONFIGURATION_ERROR',
-      'SP_API_TOKEN is required for this operation. Copy it from Super Productivity → Settings → Misc → Access Token.',
-    );
-  }
-  return config.apiToken;
-};

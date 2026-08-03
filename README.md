@@ -3,6 +3,7 @@
 [![CI](https://github.com/Amorem/super-productivity-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Amorem/super-productivity-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js >= 20](https://img.shields.io/badge/node-%3E%3D20-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![npm version](https://img.shields.io/npm/v/super-productivity-mcp-server?logo=npm)](https://www.npmjs.com/package/super-productivity-mcp-server)
 
 ![Super Productivity MCP](assets/logo.svg)
 
@@ -15,6 +16,35 @@ The core promise is deliberately small:
 > Select one task explicitly, put it in Today, start or stop its timer, and complete it.
 
 Nothing is imported or scheduled implicitly. GitHub issue association is opt-in per tool call.
+
+## Quick start
+
+The complete first-run path takes a few minutes:
+
+1. Install the **Super Productivity desktop app 18.x or newer**. The web and mobile apps do not
+   expose this local API. If **Enable local REST API** is missing, update the desktop app from the
+   [official releases](https://github.com/super-productivity/super-productivity/releases/latest).
+2. In Super Productivity, open **Settings → Misc Settings** and enable **Enable local REST API**.
+   With the released 18.16.0 desktop app, no token is displayed and no token is required.
+3. Add this server to ChatGPT Desktop or Codex using the setup below. Leave `SP_API_TOKEN` unset for
+   Super Productivity 18.16.0. If a future build displays an Access Token, it can be supplied through
+   that optional variable; never paste it into a chat or commit it to this repository.
+4. Restart or reload the MCP host if it was already open, then ask it:
+
+   ```text
+   Check the connection to Super Productivity with check_connection.
+   ```
+
+5. Once the connection succeeds, use `search_tasks` to find one task and pass its returned
+   `taskId` explicitly to `plan_task_today`, `start_task`, `stop_timer`, or `complete_task`.
+
+Optional local liveness check (it does not require the token):
+
+```bash
+curl --noproxy 127.0.0.1 http://127.0.0.1:3876/health
+```
+
+The expected response contains `"server":"up"` and `"rendererReady":true`.
 
 ## What it does
 
@@ -39,7 +69,7 @@ Productivity.
 ```mermaid
 flowchart LR
     A["ChatGPT Desktop or Codex"] -->|STDIO MCP| B["Super Productivity MCP"]
-    B -->|Bearer token over loopback HTTP| C["Super Productivity local REST API"]
+    B -->|"Loopback HTTP; no token in 18.16.0"| C["Super Productivity local REST API"]
     C --> D["One selected task"]
     D --> E["Today"]
     E --> F["Timer"]
@@ -62,24 +92,30 @@ every state-changing operation. There is no bulk-selection fallback.
 
 ## Requirements
 
-- Super Productivity desktop with the local REST API enabled.
+- Super Productivity desktop 18.x or newer with the local REST API enabled.
 - Node.js 20 or newer.
-- An access token copied from Super Productivity's settings.
 
-In Super Productivity, enable **Settings → Misc → Enable local REST API** and copy the **Access
-Token**. The official API currently listens on `http://127.0.0.1:3876` by default, exposes an
-unauthenticated `/health` endpoint, and requires a Bearer token for the other endpoints.
+In Super Productivity, enable **Settings → Misc Settings → Enable local REST API**. The official API
+listens on `http://127.0.0.1:3876` by default and exposes an unauthenticated `/health` endpoint. The
+released 18.16.0 desktop API is also unauthenticated for task endpoints, so no token is needed for
+the normal setup. This server sends a Bearer token only when the optional `SP_API_TOKEN` is set, to
+remain compatible with future authenticated builds.
 
 Read the [official Super Productivity local REST API documentation](https://github.com/super-productivity/super-productivity/blob/master/docs/wiki/3.01-API.md)
-before changing the API URL or exposing a proxy.
+before changing the API URL or exposing a proxy. The upstream API is release-sensitive: this
+package's no-token default matches the [18.16.0 desktop release](https://github.com/super-productivity/super-productivity/releases/tag/v18.16.0),
+whose [released API handler](https://github.com/super-productivity/super-productivity/blob/v18.16.0/electron/local-rest-api.ts)
+does not authenticate task requests.
 
 ## Install
 
-Once published:
+From the public npm registry:
 
 ```bash
 npx -y super-productivity-mcp-server
 ```
+
+End users do not need an npm account or an npm login to install the public package.
 
 For a local checkout:
 
@@ -89,22 +125,21 @@ pnpm build
 node /absolute/path/to/super-productivity-mcp/dist/index.js
 ```
 
-### npm publication
+### Package and releases
 
-The package is built and release-ready as `super-productivity-mcp-server@0.1.0`. The GitHub release
-workflow publishes it when the repository has an `NPM_TOKEN` Actions secret. Configure that single
-credential in **Settings → Secrets and variables → Actions**, then rerun the `Release` workflow for
-the `v0.1.0` tag; no source changes are required.
+The public package is [`super-productivity-mcp-server`](https://www.npmjs.com/package/super-productivity-mcp-server).
+The GitHub release workflow publishes new versions when the repository has an `NPM_TOKEN` Actions
+secret. That maintainer-only credential is not needed by people installing or using the server.
 
 The server reads configuration from environment variables:
 
-| Variable                    | Default                 | Notes                                                        |
-| --------------------------- | ----------------------- | ------------------------------------------------------------ |
-| `SP_API_TOKEN`              | —                       | Required for task operations; keep it outside source control |
-| `SP_API_URL`                | `http://127.0.0.1:3876` | HTTP(S) URL; loopback is enforced by default                 |
-| `SP_API_TIMEOUT_MS`         | `15000`                 | Integer from 1000 to 60000                                   |
-| `SP_ALLOW_NON_LOOPBACK_URL` | `false`                 | Use only for a trusted local proxy                           |
-| `SP_LOG_LEVEL`              | `warn`                  | `error`, `warn`, `info`, or `debug`                          |
+| Variable                    | Default                 | Notes                                                               |
+| --------------------------- | ----------------------- | ------------------------------------------------------------------- |
+| `SP_API_TOKEN`              | —                       | Optional Bearer token for an authenticated Super Productivity build |
+| `SP_API_URL`                | `http://127.0.0.1:3876` | HTTP(S) URL; loopback is enforced by default                        |
+| `SP_API_TIMEOUT_MS`         | `15000`                 | Integer from 1000 to 60000                                          |
+| `SP_ALLOW_NON_LOOPBACK_URL` | `false`                 | Use only for a trusted local proxy                                  |
+| `SP_LOG_LEVEL`              | `warn`                  | `error`, `warn`, `info`, or `debug`                                 |
 
 See [.env.example](.env.example) for a copyable template.
 
@@ -115,8 +150,12 @@ The current ChatGPT desktop MCP flow is:
 1. Open **Settings → MCP servers → Add server**.
 2. Choose **STDIO**.
 3. Set the command to `npx` and arguments to `-y`, `super-productivity-mcp-server`.
-4. Provide `SP_API_TOKEN` in the server environment.
-5. Save and restart the desktop app if it asks you to.
+4. Leave the server environment empty for Super Productivity 18.16.0. If your Super Productivity
+   build displays an Access Token, add it as `SP_API_TOKEN`.
+5. Save and restart ChatGPT Desktop if it asks you to.
+
+If the **MCP servers** menu or local **STDIO** option is unavailable, update ChatGPT Desktop to a
+version that supports local STDIO MCP servers. The npm package is public, so no npm login is needed.
 
 For a local build, use `node` with the absolute path to `dist/index.js`. See
 [examples/chatgpt-desktop.md](examples/chatgpt-desktop.md).
@@ -129,19 +168,30 @@ Codex can load a local STDIO server from `~/.codex/config.toml`:
 [mcp_servers.super_productivity]
 command = "npx"
 args = ["-y", "super-productivity-mcp-server"]
-env_vars = ["SP_API_TOKEN"]
 
 [mcp_servers.super_productivity.env]
 SP_API_URL = "http://127.0.0.1:3876"
 SP_LOG_LEVEL = "warn"
+
+# Optional: only for a Super Productivity build that exposes an Access Token.
+# env_vars = ["SP_API_TOKEN"]
 ```
 
-Export the token in the environment that launches Codex, then use `/mcp` to check the connection:
+Start Codex and use `/mcp` to check the connection:
+
+```bash
+codex
+```
+
+For a build that displays an Access Token, export it before starting Codex:
 
 ```bash
 export SP_API_TOKEN='paste-your-local-access-token-here'
 codex
 ```
+
+If Codex was already running when the token was exported, restart it so the MCP process inherits the
+environment. Keep the token out of `config.toml` when possible.
 
 For a local checkout, replace the command and arguments with:
 
@@ -149,12 +199,48 @@ For a local checkout, replace the command and arguments with:
 [mcp_servers.super_productivity]
 command = "node"
 args = ["/absolute/path/to/super-productivity-mcp/dist/index.js"]
-env_vars = ["SP_API_TOKEN"]
 ```
 
 See [examples/codex-config.toml](examples/codex-config.toml). The
 [official OpenAI MCP setup documentation](https://learn.chatgpt.com/docs/extend/mcp) covers the
 current desktop and Codex configuration surfaces.
+
+## Troubleshooting
+
+### I cannot find “Enable local REST API”
+
+Confirm that you are using the **desktop** app, not the web or mobile app, and that its version is
+18.x or newer. Quit and update it from the [official Super Productivity releases](https://github.com/super-productivity/super-productivity/releases/latest),
+then return to **Settings → Misc Settings**. This setting is not present in older desktop builds.
+
+### I can enable the API, but I do not see a token
+
+That is expected with the released Super Productivity 18.16.0 desktop app. Its local API is bound
+to loopback and does not require a token, so leave `SP_API_TOKEN` unset. Do not use an npm or GitHub
+token in its place. A future Super Productivity build may expose an Access Token; use it only when
+the app itself displays one.
+
+### `ECONNREFUSED 127.0.0.1:3876`
+
+Super Productivity is closed, the local API is disabled, or the renderer has not finished starting.
+Keep the desktop app open, enable the API, wait a few seconds, and retry `check_connection`.
+
+### `401 Unauthorized`
+
+This only applies when using a Super Productivity build that requires a Bearer token. Copy the
+current Access Token from that app, set it as `SP_API_TOKEN`, and restart the MCP host. Do not use
+the npm publication token here.
+
+### The server does not appear in the MCP client
+
+Check that Node.js 20 or newer is installed, that the command is exactly `npx` with arguments
+`-y super-productivity-mcp-server`, and restart the MCP host. The server speaks MCP over STDIO, so
+normal diagnostics go to stderr rather than appearing as a regular terminal application.
+
+### `check_connection` succeeds but no tasks are returned
+
+Use `search_tasks` with a distinctive part of an existing task title. State-changing tools require
+the exact `taskId` returned by that search; the server never guesses a task or bulk-imports issues.
 
 ## GitHub issue association
 
@@ -179,10 +265,12 @@ of choosing silently. No GitHub token or GitHub network request is required by t
 ## Security model
 
 - STDIO stdout is reserved for MCP protocol messages; diagnostics go to stderr.
-- Tokens are read from `SP_API_TOKEN`, never printed, and redacted in error/log paths.
+- `SP_API_TOKEN` is optional; when supplied, it is never printed and is redacted in error/log paths.
 - The configured API URL must be loopback unless `SP_ALLOW_NON_LOOPBACK_URL=true` is explicitly set.
-- The local API token is a capability for processes running as the same user. Protect the environment
-  and Codex configuration that can access it.
+- Super Productivity 18.16.0's local API has no application-level authentication. Keep the API on
+  loopback and remember that local applications running as the same user can read and modify tasks.
+- If a future build provides a local API token, protect the environment and configuration that can
+  access it.
 - The server does not import all GitHub issues, poll GitHub, or perform background actions.
 - All task mutations require an exact `taskId`, except the explicit, idempotent GitHub association
   tool which creates at most one marked task.
