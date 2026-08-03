@@ -26,10 +26,25 @@ The complete first-run path takes a few minutes:
    [official releases](https://github.com/super-productivity/super-productivity/releases/latest).
 2. In Super Productivity, open **Settings → Misc Settings** and enable **Enable local REST API**.
    With the released 18.16.0 desktop app, no token is displayed and no token is required.
-3. Add this server to ChatGPT Desktop or Codex using the setup below. Leave `SP_API_TOKEN` unset for
-   Super Productivity 18.16.0. If a future build displays an Access Token, it can be supplied through
-   that optional variable; never paste it into a chat or commit it to this repository.
-4. Restart or reload the MCP host if it was already open, then ask it:
+3. **Choose exactly one host setup below.** Do not run the CLI command if you use a Desktop
+   application.
+
+   **Case A — Desktop application:**
+
+   - **ChatGPT Desktop:** open **Settings → MCP servers → Add server → STDIO**, enter command
+     `npx`, and add the two arguments `-y` and `super-productivity-mcp-server`.
+   - **Codex Desktop (the app shown in the screenshot):** it may not show an **MCP servers** menu.
+     Open **Settings → Configuration**, choose **Open config.toml**, and paste the configuration
+     block in the Codex Desktop section below. No CLI is required.
+
+   **Case B — Codex CLI:** open the CLI section below, verify `codex --version`, and then run the
+   exact `codex mcp add` command. If Terminal says `zsh: command not found: codex`, use the Codex
+   Desktop `config.toml` path in Case A instead.
+
+   For Super Productivity 18.16.0, leave `SP_API_TOKEN` unset. If a future build displays an Access
+   Token, supply it only through the MCP environment; never paste it into a chat or commit it.
+
+4. Restart or reload the MCP host after completing your selected case, then ask it:
 
    ```text
    Check the connection to Super Productivity with check_connection.
@@ -143,99 +158,73 @@ The server reads configuration from environment variables:
 
 See [.env.example](.env.example) for a copyable template.
 
-## ChatGPT Desktop
+## Case A — Desktop application
 
-The current ChatGPT desktop MCP flow is:
+There are two Desktop applications people commonly mean here. They do **not** expose the same
+menu:
 
-1. Open **Settings → MCP servers → Add server**.
-2. Choose **STDIO**.
-3. Set the command to `npx` and arguments to `-y`, `super-productivity-mcp-server`.
-4. Leave the server environment empty for Super Productivity 18.16.0. If your Super Productivity
-   build displays an Access Token, add it as `SP_API_TOKEN`.
-5. Save and restart ChatGPT Desktop if it asks you to.
+- **ChatGPT Desktop:** has the graphical **Settings → MCP servers** menu.
+- **Codex Desktop:** the settings panel shown in your screenshot may not have an MCP menu. Use
+  **Settings → Configuration → Open config.toml** instead.
 
-If the **MCP servers** menu or local **STDIO** option is unavailable, update ChatGPT Desktop to a
-version that supports local STDIO MCP servers. The npm package is public, so no npm login is needed.
+Both variants start the same public npm package. You do not need an npm account or an npm login.
 
-For a local build, use `node` with the absolute path to `dist/index.js`. See
+### A1. ChatGPT Desktop — graphical setup
+
+Use this exact procedure in the ChatGPT Desktop application:
+
+1. Open **Settings → MCP servers**.
+2. Click **Add server**.
+3. Choose **STDIO**.
+4. Fill the fields as follows:
+
+   | Field                    | Value                                                              |
+   | ------------------------ | ------------------------------------------------------------------ |
+   | Name, if requested       | `super_productivity`                                               |
+   | Command                  | `npx`                                                              |
+   | Arguments                | `-y` and `super-productivity-mcp-server` as two separate arguments |
+   | `SP_API_URL`, optional   | `http://127.0.0.1:3876`                                            |
+   | `SP_LOG_LEVEL`, optional | `warn`                                                             |
+   | `SP_API_TOKEN`           | Leave empty for Super Productivity 18.16.0                         |
+
+5. Save the server and select **Restart** or restart ChatGPT Desktop if requested.
+6. In a chat, type `/mcp` to inspect connected servers, then ask:
+
+   ```text
+   Check the connection to Super Productivity with check_connection.
+   ```
+
+If **MCP servers** or **STDIO** is unavailable in ChatGPT Desktop, update the application or use
+the Codex Desktop configuration path below. For a local build, replace the command with `node`
+and use the absolute path to `dist/index.js`. See
 [examples/chatgpt-desktop.md](examples/chatgpt-desktop.md).
 
-## Codex
+### A2. Codex Desktop — configure `config.toml`, not an MCP menu
 
-There are two different Codex setup paths. Choose the one that matches how you use Codex:
+If your application has the settings sidebar shown in the screenshot, do **not** look for
+**MCP servers** there. In that Codex Desktop interface:
 
-| You use                   | Setup path                                               | Is the `codex` CLI required? |
-| ------------------------- | -------------------------------------------------------- | ---------------------------: |
-| Codex Desktop application | Settings → MCP servers, or the shared `config.toml` file |                           No |
-| Codex CLI in Terminal     | `codex mcp add ...`                                      |                          Yes |
+1. Open **Settings**.
+2. Select **Configuration** in the left sidebar.
+3. Select **Open config.toml**.
+4. Add this block and save the file:
 
-Both paths start the same public npm package. You do not need an npm account or an npm login.
+   ```toml
+   [mcp_servers.super_productivity]
+   command = "npx"
+   args = ["-y", "super-productivity-mcp-server"]
+   env = { SP_API_URL = "http://127.0.0.1:3876", SP_LOG_LEVEL = "warn" }
+   ```
 
-### Codex Desktop application — no CLI required
+5. Fully quit and reopen Codex Desktop.
+6. Ask Codex:
 
-This is the correct path if you use the Codex application and `codex` is not a command in your
-Terminal. Do not install the CLI just to configure this server.
+   ```text
+   Check the connection to Super Productivity with check_connection.
+   ```
 
-#### Option A: configure it from the Desktop settings
-
-1. Open **Settings → MCP servers** in Codex Desktop.
-2. Choose **Add server** and select the local **STDIO** transport.
-3. Enter the command `npx`.
-4. Enter these arguments, one per field if the form separates them:
-   `-y` and `super-productivity-mcp-server`.
-5. Leave the environment empty for Super Productivity 18.16.0. If you want to be explicit, add:
-   `SP_API_URL=http://127.0.0.1:3876` and `SP_LOG_LEVEL=warn`.
-6. Save the server and restart Codex Desktop if it asks you to.
-7. Ask Codex: `Check the connection to Super Productivity with check_connection.`
-
-#### Option B: configure the shared file manually
-
-If your Desktop build does not show the MCP settings form, open **Settings → Configuration → Open
-config.toml**, then add this block and save it:
-
-```toml
-[mcp_servers.super_productivity]
-command = "npx"
-args = ["-y", "super-productivity-mcp-server"]
-env = { SP_API_URL = "http://127.0.0.1:3876", SP_LOG_LEVEL = "warn" }
-```
-
-Fully quit and reopen Codex Desktop, then ask it to call `check_connection`. The same configuration
-file is shared by the Codex Desktop application, the CLI, and the IDE extension.
-
-### Codex CLI — only if `codex` works in Terminal
-
-First verify that the CLI is installed in the same Terminal where you will use it:
-
-```bash
-codex --version
-```
-
-If that prints `zsh: command not found: codex`, the CLI is not installed or is not on that shell's
-PATH. This is not a Super Productivity or npm error: use the **Codex Desktop application** path
-above instead. If you specifically want the CLI, install it using the
-[official Codex CLI instructions](https://learn.chatgpt.com/docs/codex/cli), then open a new
-Terminal and retry `codex --version`.
-
-Once `codex --version` works, register the server:
-
-```bash
-codex mcp add super_productivity \
-  --env SP_API_URL=http://127.0.0.1:3876 \
-  --env SP_LOG_LEVEL=warn \
-  -- npx -y super-productivity-mcp-server
-```
-
-Then check the registration and start the CLI:
-
-```bash
-codex mcp list
-codex
-```
-
-Inside the CLI, use `/mcp` to inspect the connection and ask Codex to call `check_connection`.
-
-For a local checkout, use this command in the Desktop STDIO form or in `config.toml` instead:
+The shared file is normally `~/.codex/config.toml`. Codex Desktop, Codex CLI, and the IDE
+extension use the same configuration layers. For a local checkout, replace the block with:
 
 ```toml
 [mcp_servers.super_productivity]
@@ -243,9 +232,44 @@ command = "node"
 args = ["/absolute/path/to/super-productivity-mcp/dist/index.js"]
 ```
 
-See [examples/codex-config.toml](examples/codex-config.toml). The
-[official OpenAI MCP setup documentation](https://learn.chatgpt.com/docs/extend/mcp) covers the
-current Desktop and Codex configuration surfaces.
+## Case B — Codex CLI in Terminal
+
+Use this case only if you want to work from the Codex CLI. The Desktop procedure above does not
+require the `codex` command.
+
+1. In the same Terminal where you will use Codex, run:
+
+   ```bash
+   codex --version
+   ```
+
+   If Terminal prints `zsh: command not found: codex`, stop and use [Case A](#case-a--desktop-application).
+   If you specifically want the CLI, install it using the
+   [official Codex CLI instructions](https://learn.chatgpt.com/docs/codex/cli), open a new
+   Terminal, and run `codex --version` again.
+
+2. Once `codex --version` works, copy this complete command:
+
+   ```bash
+   codex mcp add super_productivity --env SP_API_URL=http://127.0.0.1:3876 --env SP_LOG_LEVEL=warn -- npx -y super-productivity-mcp-server
+   ```
+
+3. Verify the registration and start the CLI:
+
+   ```bash
+   codex mcp list
+   codex
+   ```
+
+4. Inside Codex, type `/mcp` and ask:
+
+   ```text
+   Check the connection to Super Productivity with check_connection.
+   ```
+
+See [examples/codex-config.toml](examples/codex-config.toml) for the shared configuration format
+and the [official OpenAI MCP setup documentation](https://learn.chatgpt.com/docs/extend/mcp) for
+the current Codex configuration surfaces.
 
 ## Troubleshooting
 
@@ -282,10 +306,17 @@ normal diagnostics go to stderr rather than appearing as a regular terminal appl
 ### Terminal says `zsh: command not found: codex`
 
 That message only means the optional Codex CLI is unavailable in that Terminal. If you use the
-Codex Desktop application, configure the server from **Settings → MCP servers** or
-**Settings → Configuration → Open config.toml**; no `codex` command is needed. If you intended to
-use the CLI, follow the [official Codex CLI installation instructions](https://learn.chatgpt.com/docs/codex/cli),
+Codex Desktop application shown in the screenshot, configure the server from **Settings →
+Configuration → Open config.toml**; no `codex` command is needed. If you intended to use the CLI,
+follow the [official Codex CLI installation instructions](https://learn.chatgpt.com/docs/codex/cli),
 open a new Terminal, and confirm `codex --version` before running `codex mcp add`.
+
+### I cannot find “MCP servers” in Desktop settings
+
+That menu belongs to the **ChatGPT Desktop** MCP flow. The current Codex Desktop settings panel may
+not expose it. In Codex Desktop, select **Configuration** in the settings sidebar and then choose
+**Open config.toml**. Add the `[mcp_servers.super_productivity]` block from [Case A](#case-a--desktop-application),
+restart Codex Desktop, and ask it to call `check_connection`.
 
 ### `check_connection` succeeds but no tasks are returned
 

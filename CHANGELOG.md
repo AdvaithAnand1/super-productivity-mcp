@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.3] - 2026-08-03
+
+### Changed
+
+- Split Desktop onboarding into the ChatGPT Desktop graphical path and the Codex Desktop
+  `config.toml` path.
+- Made the CLI procedure a separate, exact case with the prerequisite, registration command,
+  verification commands, and `codex`-missing fallback.
+- Documented that the **MCP servers** menu may not exist in the current Codex Desktop settings
+  panel shown by users.
+
 ## [0.1.2] - 2026-08-03
 
 ### Changed

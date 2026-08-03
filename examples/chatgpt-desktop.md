@@ -1,4 +1,8 @@
-# ChatGPT Desktop setup
+# Case A — ChatGPT Desktop graphical setup
+
+This is the Desktop application case with the **MCP servers** menu. If you are using the Codex
+Desktop settings panel shown in the README screenshot, use `Settings → Configuration → Open config.toml`
+instead; do not run `codex mcp add`.
 
 Use the **desktop** version of Super Productivity 18.x or newer. If the local API setting is not
 visible, update Super Productivity first from its [official releases](https://github.com/super-productivity/super-productivity/releases/latest).
