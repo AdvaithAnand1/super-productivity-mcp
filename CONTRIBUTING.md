@@ -4,7 +4,7 @@ Thanks for helping make the explicit Super Productivity workflow useful.
 
 ## Local setup
 
-Requirements: Node.js 20+ and pnpm 11.
+Requirements: Node.js 20+ and pnpm 10.12.4 (the version pinned by the project).
 
 ```bash
 pnpm install

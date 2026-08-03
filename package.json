@@ -36,7 +36,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "packageManager": "pnpm@11.18.0",
+  "packageManager": "pnpm@10.12.4",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx src/index.ts",
