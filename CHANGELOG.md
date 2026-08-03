@@ -11,6 +11,8 @@ All notable changes to this project are documented here.
 - Added local liveness verification, client restart guidance, token safety reminders, and
   troubleshooting for the most common connection errors.
 - Updated the npm installation and release documentation now that the public package is available.
+- Matched the released Super Productivity 18.16.0 behavior: no token is required, while optional
+  Bearer-token support remains available for future authenticated builds.
 
 ## [0.1.0] - 2026-08-03
 

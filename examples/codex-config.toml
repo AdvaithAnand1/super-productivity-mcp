@@ -1,18 +1,20 @@
 # Copy this block to ~/.codex/config.toml.
 # Requires the Super Productivity desktop app 18.x or newer with its local REST API enabled.
-# Export SP_API_TOKEN before starting Codex so the token is not committed here.
+# Super Productivity 18.16.0 does not require or display a token.
 
 [mcp_servers.super_productivity]
 command = "npx"
 args = ["-y", "super-productivity-mcp-server"]
-env_vars = ["SP_API_TOKEN"]
 
 [mcp_servers.super_productivity.env]
 SP_API_URL = "http://127.0.0.1:3876"
 SP_LOG_LEVEL = "warn"
 
+# For a future token-enabled build, uncomment this and export SP_API_TOKEN before starting Codex.
+# env_vars = ["SP_API_TOKEN"]
 # After changing SP_API_TOKEN, restart Codex and use /mcp to verify the server.
 
 # For a local checkout, use this instead:
 # command = "node"
 # args = ["/absolute/path/to/super-productivity-mcp/dist/index.js"]
+# env_vars = ["SP_API_TOKEN"]

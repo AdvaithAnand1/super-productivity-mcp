@@ -1,6 +1,6 @@
 import { z } from 'zod/v4';
 
-import { type AppConfig, requireApiToken } from './config.js';
+import type { AppConfig } from './config.js';
 import { AppError } from './errors.js';
 import type { Logger } from './logger.js';
 import {
@@ -130,7 +130,11 @@ export class SuperProductivityClient {
     const requiresAuth = options.requiresAuth ?? true;
     const headers = new Headers({ Accept: 'application/json' });
     if (options.body !== undefined) headers.set('Content-Type', 'application/json');
-    if (requiresAuth) headers.set('Authorization', `Bearer ${requireApiToken(this.config)}`);
+    // Super Productivity 18.16.0 exposes the released local API without
+    // authentication. Newer builds may expose a Bearer token; send it when
+    // configured while remaining compatible with the released API.
+    const bearerToken = requiresAuth ? this.config.apiToken : undefined;
+    if (bearerToken) headers.set('Authorization', `Bearer ${bearerToken}`);
 
     const url = `${this.config.apiUrl.toString().replace(/\/$/, '')}${path}`;
     const controller = new AbortController();
@@ -141,7 +145,7 @@ export class SuperProductivityClient {
       this.logger.debug('Calling Super Productivity API', {
         method: options.method ?? 'GET',
         path: path.split('?')[0],
-        authenticated: requiresAuth,
+        authenticated: Boolean(bearerToken),
       });
 
       let response: Response;
