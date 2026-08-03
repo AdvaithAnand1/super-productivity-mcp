@@ -36,9 +36,14 @@ jobs:
         run: pnpm verify
 
       - name: Publish to npm
+        if: ${{ secrets.NPM_TOKEN != '' }}
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Explain skipped npm publication
+        if: ${{ secrets.NPM_TOKEN == '' }}
+        run: echo "NPM_TOKEN is not configured; GitHub release will still be created."
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
