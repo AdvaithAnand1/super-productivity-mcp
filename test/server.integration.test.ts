@@ -12,6 +12,9 @@ describe('MCP server integration over an in-memory transport', () => {
     const updatedTask = testTask({ id: 'task-1', title: 'Ship the feature', dueDay: todayString });
     const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
       const url = new URL(String(input));
+      if (url.pathname === '/health' && (init?.method ?? 'GET') === 'GET') {
+        return successResponse({ server: 'up', rendererReady: true });
+      }
       if (url.pathname === '/tasks' && (init?.method ?? 'GET') === 'GET') {
         return successResponse([task]);
       }
@@ -22,12 +25,23 @@ describe('MCP server integration over an in-memory transport', () => {
       throw new Error(`Unexpected mocked API request: ${init?.method ?? 'GET'} ${url.pathname}`);
     });
     const logger = testLogger();
-    const client = new SuperProductivityClient(testConfig(), logger, fetchMock);
-    const server = createMcpServer({ config: testConfig(), client, logger });
+    const { apiToken, ...config } = testConfig();
+    void apiToken;
+    const client = new SuperProductivityClient(config, logger, fetchMock);
+    const server = createMcpServer({ config, client, logger });
     const mcpClient = new Client({ name: 'test-client', version: '0.1.0' });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 
     await Promise.all([mcpClient.connect(clientTransport), server.connect(serverTransport)]);
+
+    const connectionResult = await mcpClient.callTool({
+      name: 'check_connection',
+      arguments: {},
+    });
+    const connection = JSON.parse(responseText(connectionResult));
+    expect(connection.connected).toBe(true);
+    expect(connection.configured).toBe(true);
+    expect(connection.tokenConfigured).toBe(false);
 
     const tools = await mcpClient.listTools();
     expect(tools.tools.map((tool) => tool.name)).toEqual(
@@ -57,7 +71,7 @@ describe('MCP server integration over an in-memory transport', () => {
     });
     expect(JSON.parse(responseText(planResult)).plannedForToday).toBe(true);
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     await mcpClient.close();
     await server.close();
   });

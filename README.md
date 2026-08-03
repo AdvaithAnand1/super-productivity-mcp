@@ -286,6 +286,9 @@ to loopback and does not require a token, so leave `SP_API_TOKEN` unset. Do not 
 token in its place. A future Super Productivity build may expose an Access Token; use it only when
 the app itself displays one.
 
+In `check_connection`, `configured: true` means the local API and renderer are ready. The separate
+`tokenConfigured: false` field is expected for this no-token setup.
+
 ### `ECONNREFUSED 127.0.0.1:3876`
 
 Super Productivity is closed, the local API is disabled, or the renderer has not finished starting.

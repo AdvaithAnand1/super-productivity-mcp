@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.5] - 2026-08-03
+
+### Fixed
+
+- Corrected `check_connection` so a healthy Super Productivity 18.16.0 API is reported as
+  configured even when no optional API token is present.
+- Added an explicit `tokenConfigured` field to distinguish optional authentication from API
+  readiness.
+
 ## [0.1.4] - 2026-08-03
 
 ### Changed

@@ -201,11 +201,13 @@ export const createMcpServer = ({ config, client, logger }: ServerDependencies):
     withToolErrors(async () => {
       try {
         const health = await client.health();
+        const configured = health.server === 'up' && health.rendererReady;
         return {
-          connected: health.server === 'up' && health.rendererReady,
+          connected: configured,
           reachable: true,
           rendererReady: health.rendererReady,
-          configured: Boolean(config.apiToken),
+          configured,
+          tokenConfigured: Boolean(config.apiToken),
           apiUrl: config.apiUrl.toString(),
         };
       } catch (error) {
@@ -214,7 +216,8 @@ export const createMcpServer = ({ config, client, logger }: ServerDependencies):
           connected: false,
           reachable: false,
           rendererReady: false,
-          configured: Boolean(config.apiToken),
+          configured: false,
+          tokenConfigured: Boolean(config.apiToken),
           apiUrl: config.apiUrl.toString(),
           error: { code: publicError.code, message: publicError.message },
         };
