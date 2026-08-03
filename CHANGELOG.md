@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.2] - 2026-08-03
+
+### Changed
+
+- Split Codex onboarding into explicit Desktop application and CLI procedures.
+- Documented the Desktop settings path and shared `config.toml` fallback without requiring the
+  `codex` command.
+- Added troubleshooting for `zsh: command not found: codex` and corrected the Codex example env
+  configuration.
+
 ## [0.1.1] - 2026-08-03
 
 ### Changed

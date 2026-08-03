@@ -1,18 +1,19 @@
-# Copy this block to ~/.codex/config.toml.
+# This configuration works for both Codex Desktop and Codex CLI.
+#
+# Codex Desktop: open Settings > Configuration > Open config.toml and add this block.
+# Codex CLI: this is the shared ~/.codex/config.toml file; codex mcp add can also create it.
+# No `codex` command is required for the Desktop path.
 # Requires the Super Productivity desktop app 18.x or newer with its local REST API enabled.
 # Super Productivity 18.16.0 does not require or display a token.
 
 [mcp_servers.super_productivity]
 command = "npx"
 args = ["-y", "super-productivity-mcp-server"]
-
-[mcp_servers.super_productivity.env]
-SP_API_URL = "http://127.0.0.1:3876"
-SP_LOG_LEVEL = "warn"
+env = { SP_API_URL = "http://127.0.0.1:3876", SP_LOG_LEVEL = "warn" }
 
 # For a future token-enabled build, uncomment this and export SP_API_TOKEN before starting Codex.
 # env_vars = ["SP_API_TOKEN"]
-# After changing SP_API_TOKEN, restart Codex and use /mcp to verify the server.
+# After changing SP_API_TOKEN, restart the Desktop app or CLI and use /mcp to verify the server.
 
 # For a local checkout, use this instead:
 # command = "node"
