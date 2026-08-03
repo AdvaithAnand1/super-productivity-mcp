@@ -1,0 +1,18 @@
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    environment: 'node',
+    globals: true,
+    include: ['test/**/*.test.ts'],
+    coverage: {
+      reporter: ['text', 'html'],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 75,
+        statements: 80,
+      },
+    },
+  },
+});

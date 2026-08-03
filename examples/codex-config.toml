@@ -1,0 +1,15 @@
+# Copy this block to ~/.codex/config.toml.
+# Export SP_API_TOKEN before starting Codex so the token is not committed here.
+
+[mcp_servers.super_productivity]
+command = "npx"
+args = ["-y", "super-productivity-mcp-server"]
+env_vars = ["SP_API_TOKEN"]
+
+[mcp_servers.super_productivity.env]
+SP_API_URL = "http://127.0.0.1:3876"
+SP_LOG_LEVEL = "warn"
+
+# For a local checkout, use this instead:
+# command = "node"
+# args = ["/absolute/path/to/super-productivity-mcp/dist/index.js"]
