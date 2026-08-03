@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.4] - 2026-08-03
+
+### Changed
+
+- Removed private, context-specific references from the public onboarding documentation.
+- Reworded Codex Desktop instructions so they stand alone for every reader.
+
 ## [0.1.3] - 2026-08-03
 
 ### Changed
@@ -10,8 +17,7 @@ All notable changes to this project are documented here.
   `config.toml` path.
 - Made the CLI procedure a separate, exact case with the prerequisite, registration command,
   verification commands, and `codex`-missing fallback.
-- Documented that the **MCP servers** menu may not exist in the current Codex Desktop settings
-  panel shown by users.
+- Documented that the **MCP servers** menu may not exist in some Codex Desktop settings panels.
 
 ## [0.1.2] - 2026-08-03
 

@@ -33,7 +33,7 @@ The complete first-run path takes a few minutes:
 
    - **ChatGPT Desktop:** open **Settings → MCP servers → Add server → STDIO**, enter command
      `npx`, and add the two arguments `-y` and `super-productivity-mcp-server`.
-   - **Codex Desktop (the app shown in the screenshot):** it may not show an **MCP servers** menu.
+   - **Codex Desktop:** it may not show an **MCP servers** menu.
      Open **Settings → Configuration**, choose **Open config.toml**, and paste the configuration
      block in the Codex Desktop section below. No CLI is required.
 
@@ -164,8 +164,8 @@ There are two Desktop applications people commonly mean here. They do **not** ex
 menu:
 
 - **ChatGPT Desktop:** has the graphical **Settings → MCP servers** menu.
-- **Codex Desktop:** the settings panel shown in your screenshot may not have an MCP menu. Use
-  **Settings → Configuration → Open config.toml** instead.
+- **Codex Desktop:** some builds may not have an MCP menu. Use **Settings → Configuration → Open
+  config.toml** instead.
 
 Both variants start the same public npm package. You do not need an npm account or an npm login.
 
@@ -201,8 +201,8 @@ and use the absolute path to `dist/index.js`. See
 
 ### A2. Codex Desktop — configure `config.toml`, not an MCP menu
 
-If your application has the settings sidebar shown in the screenshot, do **not** look for
-**MCP servers** there. In that Codex Desktop interface:
+If your Codex Desktop build does not show an **MCP servers** menu, do **not** look for it elsewhere
+in the settings. Use **Settings → Configuration → Open config.toml** instead:
 
 1. Open **Settings**.
 2. Select **Configuration** in the left sidebar.
@@ -306,8 +306,8 @@ normal diagnostics go to stderr rather than appearing as a regular terminal appl
 ### Terminal says `zsh: command not found: codex`
 
 That message only means the optional Codex CLI is unavailable in that Terminal. If you use the
-Codex Desktop application shown in the screenshot, configure the server from **Settings →
-Configuration → Open config.toml**; no `codex` command is needed. If you intended to use the CLI,
+Codex Desktop application, configure the server from **Settings → Configuration → Open config.toml**;
+no `codex` command is needed. If you intended to use the CLI,
 follow the [official Codex CLI installation instructions](https://learn.chatgpt.com/docs/codex/cli),
 open a new Terminal, and confirm `codex --version` before running `codex mcp add`.
 
