@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.1] - 2026-08-03
+
+### Changed
+
+- Added a first-run onboarding path for the Super Productivity desktop API.
+- Documented the supported desktop-version requirement and the missing-setting update path.
+- Added local liveness verification, client restart guidance, token safety reminders, and
+  troubleshooting for the most common connection errors.
+- Updated the npm installation and release documentation now that the public package is available.
+
 ## [0.1.0] - 2026-08-03
 
 ### Added
