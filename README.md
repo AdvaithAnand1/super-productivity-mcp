@@ -89,6 +89,13 @@ pnpm build
 node /absolute/path/to/super-productivity-mcp/dist/index.js
 ```
 
+### npm publication
+
+The package is built and release-ready as `super-productivity-mcp-server@0.1.0`. The GitHub release
+workflow publishes it when the repository has an `NPM_TOKEN` Actions secret. Configure that single
+credential in **Settings → Secrets and variables → Actions**, then rerun the `Release` workflow for
+the `v0.1.0` tag; no source changes are required.
+
 The server reads configuration from environment variables:
 
 | Variable                    | Default                 | Notes                                                        |
