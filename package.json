@@ -1,20 +1,20 @@
 {
   "name": "super-productivity-mcp-server",
   "version": "0.1.5",
-  "description": "An explicit MCP server for Super Productivity's local REST API.",
+  "description": "Expanded Super Productivity MCP server with rich task context, safe metadata updates, bulk operations, Windows support, and optional enhanced semantic API capabilities.",
   "license": "MIT",
-  "author": "Amorem",
+  "author": "Amorem (original project); maintained by AdvaithAnand1",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Amorem/super-productivity-mcp.git"
+    "url": "https://github.com/AdvaithAnand1/super-productivity-mcp.git"
   },
-  "homepage": "https://github.com/Amorem/super-productivity-mcp#readme",
+  "homepage": "https://github.com/AdvaithAnand1/super-productivity-mcp#readme",
   "bugs": {
-    "url": "https://github.com/Amorem/super-productivity-mcp/issues"
+    "url": "https://github.com/AdvaithAnand1/super-productivity-mcp/issues"
   },
   "bin": {
     "super-productivity-mcp": "dist/index.js"
@@ -23,7 +23,11 @@
     "dist",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "examples",
+    "docs/FEATURES.md",
+    "docs/architecture.md",
+    "docs/RECURRENCE-AND-ATTACHMENTS.md"
   ],
   "keywords": [
     "mcp",
@@ -31,7 +35,9 @@
     "super-productivity",
     "productivity",
     "stdio",
-    "github"
+    "github",
+    "task-management",
+    "task-tracking"
   ],
   "publishConfig": {
     "access": "public"
@@ -48,7 +54,9 @@
     "test:watch": "vitest",
     "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build",
     "pack:check": "pnpm build && npm pack --dry-run",
-    "prepublishOnly": "npm run verify"
+    "prepublishOnly": "npm run verify",
+    "smoke:live": "node scripts/live-enhanced-smoke.mjs",
+    "smoke:package": "node scripts/package-smoke.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",

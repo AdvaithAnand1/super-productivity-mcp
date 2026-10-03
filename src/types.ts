@@ -13,11 +13,18 @@ export const SpTaskSchema = z
     id: z.string().min(1),
     title: z.string(),
     isDone: z.boolean().optional(),
+    priority: z
+      .union([z.literal(1), z.literal(2), z.literal(3)])
+      .nullable()
+      .optional(),
     projectId: nullableString,
     tagIds: z.array(z.string()).optional(),
     notes: nullableString,
     dueDay: nullableString,
     dueWithTime: nullableNumber,
+    deadlineDay: nullableString,
+    deadlineWithTime: nullableNumber,
+    deadlineRemindAt: nullableNumber,
     timeEstimate: z.number().finite().optional(),
     timeSpent: z.number().finite().optional(),
     parentId: nullableString,
@@ -29,6 +36,72 @@ export const SpTaskSchema = z
   .passthrough();
 
 export type SpTask = z.infer<typeof SpTaskSchema>;
+
+export const SpTaskAttachmentSchema = z
+  .object({
+    id: z.string().nullable(),
+    path: z.string().optional(),
+    type: z.enum(['FILE', 'LINK', 'IMG', 'COMMAND', 'NOTE']),
+    title: z.string().optional(),
+    icon: z.string().optional(),
+    originalImgPath: z.string().optional(),
+  })
+  .passthrough();
+export type SpTaskAttachment = z.infer<typeof SpTaskAttachmentSchema>;
+
+export const SpTaskLinkAttachmentResultSchema = z.object({
+  task: SpTaskSchema,
+  attachment: SpTaskAttachmentSchema,
+});
+export const SpTaskAttachmentDetachResultSchema = z.object({
+  task: SpTaskSchema,
+  attachmentId: z.string(),
+  detached: z.literal(true),
+});
+
+export const SpHierarchyResultSchema = z.object({
+  task: SpTaskSchema,
+  previousParent: SpTaskSchema.nullable(),
+  parent: SpTaskSchema.nullable(),
+  siblingIds: z.array(z.string()),
+});
+export type SpHierarchyResult = z.infer<typeof SpHierarchyResultSchema>;
+
+export const SpOrderResultSchema = z.object({
+  taskId: z.string().min(1),
+  scope: z.enum(['project', 'backlog', 'tag', 'subtasks']),
+  scopeId: z.string().min(1),
+  orderedIds: z.array(z.string()),
+});
+export type SpOrderResult = z.infer<typeof SpOrderResultSchema>;
+
+export const SpTimeAdjustmentResultSchema = z.object({
+  task: SpTaskSchema,
+  date: z.string(),
+  operation: z.enum(['add', 'remove']),
+  duration: z.number().int().positive(),
+  dayTotal: z.number().finite().nonnegative(),
+  total: z.number().finite().nonnegative(),
+});
+export type SpTimeAdjustmentResult = z.infer<typeof SpTimeAdjustmentResultSchema>;
+
+export const SpTagSchema = z
+  .object({
+    id: z.string().min(1),
+    title: z.string(),
+  })
+  .passthrough();
+
+export type SpTag = z.infer<typeof SpTagSchema>;
+
+export const SpProjectSchema = z
+  .object({
+    id: z.string().min(1),
+    title: z.string(),
+  })
+  .passthrough();
+
+export type SpProject = z.infer<typeof SpProjectSchema>;
 
 export const SpHealthSchema = z
   .object({

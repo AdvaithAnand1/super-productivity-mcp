@@ -21,6 +21,13 @@ describe('loadConfig', () => {
     expect(config.apiUrl.hostname).toBe('192.168.1.20');
   });
 
+  it('uses the enhanced semantic API by default and accepts a loopback override', () => {
+    expect(loadConfig().semanticApiUrl.toString()).toBe('http://127.0.0.1:3876/bridge/');
+    const config = loadConfig({ SP_SEMANTIC_API_URL: 'http://127.0.0.1:3877/bridge/' });
+    expect(config.semanticApiUrl.toString()).toBe('http://127.0.0.1:3877/bridge/');
+    expect(() => loadConfig({ SP_SEMANTIC_API_URL: 'http://example.com:3877' })).toThrow(AppError);
+  });
+
   it('rejects credentials and query parameters in the API URL', () => {
     expect(() => loadConfig({ SP_API_URL: 'http://user:pass@127.0.0.1:3876' })).toThrow(
       'must not contain credentials',

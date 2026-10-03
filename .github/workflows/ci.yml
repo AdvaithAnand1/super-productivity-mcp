@@ -40,3 +40,6 @@ jobs:
 
       - name: Check package contents
         run: pnpm pack:check
+
+      - name: Install and smoke-test packed package
+        run: pnpm smoke:package

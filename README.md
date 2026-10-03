@@ -1,413 +1,165 @@
-# Super Productivity MCP
+# Super Productivity MCP (Community Fork)
 
-[![CI](https://github.com/Amorem/super-productivity-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Amorem/super-productivity-mcp/actions/workflows/ci.yml)
+[![CI](https://github.com/AdvaithAnand1/super-productivity-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/AdvaithAnand1/super-productivity-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js >= 20](https://img.shields.io/badge/node-%3E%3D20-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![npm version](https://img.shields.io/npm/v/super-productivity-mcp-server?logo=npm)](https://www.npmjs.com/package/super-productivity-mcp-server)
 
-![Super Productivity MCP](assets/logo.svg)
+A local Model Context Protocol (MCP) server that lets MCP clients inspect and manage tasks in the Super Productivity desktop app. It communicates over STDIO and uses Super Productivity’s loopback REST API. Normal task management works with an unmodified released desktop app; a separately modified app build adds a capability-discovered semantic API for operations the stock API does not expose.
 
-An explicit, local [Model Context Protocol](https://modelcontextprotocol.io/) server for
-[Super Productivity](https://super-productivity.com/). It connects ChatGPT Desktop or Codex to
-Super Productivity's official local REST API over STDIO.
+This community-maintained fork expands [Amorem’s original Super Productivity MCP](https://github.com/Amorem/super-productivity-mcp) with richer task context, safer metadata updates, bounded bulk operations, and optional enhanced semantic API tools. The MIT license and upstream attribution are retained. This repository is distributed on GitHub; this fork has not been published to npm.
 
-The core promise is deliberately small:
+## Features
 
-> Select one task explicitly, put it in Today, start or stop its timer, and complete it.
+- Search and read tasks with project, tag, parent, subtask, and attachment context.
+- Create tasks and apply sparse metadata updates: omitted fields are preserved.
+- Plan Today, manage timers and task lifecycle, and query overdue/upcoming/unscheduled queues.
+- Resolve projects and tags by exact unique names; preview and apply bounded bulk updates.
+- Associate a GitHub issue with one local task when explicitly asked. The server does not call GitHub.
+- With the enhanced app API: set priority, change hierarchy and ordering, adjust historical time, manage projects/tags, and safely edit web-link attachment metadata.
 
-Nothing is imported or scheduled implicitly. GitHub issue association is opt-in per tool call.
+## Stock and enhanced modes
 
-## Quick start
+| Stock mode: unmodified desktop app                                                            | Enhanced mode: compatible local source build                                                            | Read-only or intentionally unsupported                                             |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Search and full task/context reads; project and tag lists                                     | Priority set/clear; task parent assign, reparent, and promote                                           | Recurrence configuration and behavior writes                                       |
+| Create tasks; sparse updates to supported metadata, schedule, deadlines, completion, and tags | Ordered moves in projects, backlog, tags/Today, and subtasks                                            | Local file/image attachment writes and binary transfer                             |
+| Today planning, timer control, complete/archive/restore/delete                                | Add/remove historical time by date in integer milliseconds                                              | Provider-specific issue metadata edits; board/section membership writes            |
+| Date-based task queues, bulk sparse updates, explicit GitHub issue association                | Create/rename/delete-empty projects and tags; add HTTP(S) links, rename or detach attachment references | Full recurrence configuration is not currently returned as normalized task context |
 
-The complete first-run path takes a few minutes:
+Enhanced tools check the app’s advertised capabilities and report unavailable features when those routes are absent. See [the detailed capability matrix](docs/FEATURES.md) for the status and evidence of each operation, and [the architecture note](docs/architecture.md) for the request flow. The enhanced routes are not in released stock Super Productivity builds unless and until the app maintainers adopt them.
 
-1. Install the **Super Productivity desktop app 18.x or newer**. The web and mobile apps do not
-   expose this local API. If **Enable local REST API** is missing, update the desktop app from the
-   [official releases](https://github.com/super-productivity/super-productivity/releases/latest).
-2. In Super Productivity, open **Settings → Misc Settings** and enable **Enable local REST API**.
-   With the released 18.16.0 desktop app, no token is displayed and no token is required.
-3. **Choose exactly one host setup below.** Do not run the CLI command if you use a Desktop
-   application.
+## Requirements and installation
 
-   **Case A — Desktop application:**
+- Super Productivity **desktop** 18.16.0 or newer, with **Settings → Misc Settings → Enable local REST API** enabled. Web and mobile versions do not expose this local API.
+- Node.js 20 or newer.
+- One MCP host, such as ChatGPT Desktop or Codex Desktop/CLI.
 
-   - **ChatGPT Desktop:** open **Settings → MCP servers → Add server → STDIO**, enter command
-     `npx`, and add the two arguments `-y` and `super-productivity-mcp-server`.
-   - **Codex Desktop:** it may not show an **MCP servers** menu.
-     Open **Settings → Configuration**, choose **Open config.toml**, and paste the configuration
-     block in the Codex Desktop section below. No CLI is required.
+To use this fork, clone and build it locally:
 
-   **Case B — Codex CLI:** open the CLI section below, verify `codex --version`, and then run the
-   exact `codex mcp add` command. If Terminal says `zsh: command not found: codex`, use the Codex
-   Desktop `config.toml` path in Case A instead.
+```bash
+git clone https://github.com/AdvaithAnand1/super-productivity-mcp.git
+cd super-productivity-mcp
+corepack pnpm install --frozen-lockfile
+corepack pnpm build
+```
 
-   For Super Productivity 18.16.0, leave `SP_API_TOKEN` unset. If a future build displays an Access
-   Token, supply it only through the MCP environment; never paste it into a chat or commit it.
+Then point your MCP host at the local `dist/index.js` entry point. The existing npm package name belongs to the original published distribution; running `npx -y super-productivity-mcp-server` installs that published release, not this GitHub fork. See [ChatGPT Desktop setup](examples/chatgpt-desktop.md) and the [Codex configuration example](examples/codex-config.toml) for host-specific configuration.
 
-4. Restart or reload the MCP host after completing your selected case, then ask it:
-
-   ```text
-   Check the connection to Super Productivity with check_connection.
-   ```
-
-5. Once the connection succeeds, use `search_tasks` to find one task and pass its returned
-   `taskId` explicitly to `plan_task_today`, `start_task`, `stop_timer`, or `complete_task`.
-
-Optional local liveness check (it does not require the token):
+After enabling the local REST API and restarting the MCP host, call `check_connection`. A healthy result reports the app API and renderer ready. You can also check local liveness with:
 
 ```bash
 curl --noproxy 127.0.0.1 http://127.0.0.1:3876/health
 ```
 
-The expected response contains `"server":"up"` and `"rendererReady":true`.
+## Tool overview
 
-## What it does
+The server exposes explicit tools for connection checks, task search/queues/context, project and tag lookup, task creation and sparse updates, tag membership, Today planning, timers, completion, archive/restore/delete, bounded bulk changes, and GitHub issue association. Enhanced-only tools provide priority, hierarchy, ordering, historical time, project/tag administration, and limited attachment metadata operations.
 
-| Tool                          | Purpose                                     |         Changes state |
-| ----------------------------- | ------------------------------------------- | --------------------: |
-| `health` / `check_connection` | Check the local API and renderer            |                    No |
-| `search_tasks`                | Find tasks and return stable IDs            |                    No |
-| `list_today`                  | List tasks already planned for Today        |                    No |
-| `plan_task_today`             | Plan exactly one supplied task ID for Today |                   Yes |
-| `start_task`                  | Start exactly one supplied task ID          |                   Yes |
-| `stop_timer`                  | Stop the current timer                      |                   Yes |
-| `complete_task`               | Complete exactly one supplied task ID       |                   Yes |
-| `get_current_task`            | Read the currently tracked task             |                    No |
-| `ensure_github_issue_task`    | Reuse or create one task for a GitHub issue | Yes, only when called |
+Important behavior:
 
-The server intentionally does not create GitHub issues. Use the GitHub integration or connector for
-that, then call `ensure_github_issue_task` only when you explicitly want the issue in Super
-Productivity.
+- Mutations target explicit task/project/tag IDs. Exact unique names may be used where offered; ambiguity is an error.
+- `update_task` changes only supplied fields. Empty notes clear notes; `null` clears supported nullable date/time fields.
+- `bulk_update_tasks` previews by default, accepts at most 25 task IDs, and stops after an uncertain write.
+- `adjust_task_time` takes a positive integer number of milliseconds and a `YYYY-MM-DD` date. It edits historical totals, not timer sessions.
+- `delete_task` permanently deletes the selected task and its subtasks. Use `archive_task` to hide a task reversibly.
+- Project and tag deletion are limited to empty objects; the virtual Today tag is protected.
+- Link attachments accept HTTP(S) URLs only. Creating one does not fetch its URL. Detaching removes the reference and does not delete the target.
 
-## The workflow
+## Enhanced API setup
 
-```mermaid
-flowchart LR
-    A["ChatGPT Desktop or Codex"] -->|STDIO MCP| B["Super Productivity MCP"]
-    B -->|"Loopback HTTP; no token in 18.16.0"| C["Super Productivity local REST API"]
-    C --> D["One selected task"]
-    D --> E["Today"]
-    E --> F["Timer"]
-    F --> G["Done"]
-    H["GitHub issue URL or owner/repo#number"] -->|explicit ensure call| B
-```
+The semantic API extension lives in the Super Productivity source checkout. Build and run that modified desktop app with its local REST API enabled. The MCP discovers support at `GET /bridge/capabilities` before enhanced operations. The `/bridge/` path is the current route prefix retained by this implementation; user-facing documentation calls it the enhanced semantic API.
 
-Typical conversation:
+The enhanced API remains on loopback and uses the app’s Bearer-token authorization for protected routes. The released app does not include these routes, so enhanced tools remain unavailable on stock releases. For a development build, set `SP_API_TOKEN` to the access token provided by the app. Do not put tokens in chat, source control, or logs. The app patch and a proposal for upstream review are tracked separately from this MCP package.
 
-```text
-Search Super Productivity for "Add the export filter".
-Plan task <returned taskId> for Today.
-Start task <same taskId>.
-Stop the timer.
-Complete task <same taskId>.
-```
+## MCP client configuration
 
-The server instructions tell an MCP client to search first and pass the exact returned `taskId` to
-every state-changing operation. There is no bulk-selection fallback.
+ChatGPT Desktop’s MCP settings can add a STDIO server. To use this fork, set command `node` and point it to the local `dist/index.js` built from the checkout. The `npx -y super-productivity-mcp-server` command runs the original published npm distribution.
 
-## Requirements
-
-- Super Productivity desktop 18.x or newer with the local REST API enabled.
-- Node.js 20 or newer.
-
-In Super Productivity, enable **Settings → Misc Settings → Enable local REST API**. The official API
-listens on `http://127.0.0.1:3876` by default and exposes an unauthenticated `/health` endpoint. The
-released 18.16.0 desktop API is also unauthenticated for task endpoints, so no token is needed for
-the normal setup. This server sends a Bearer token only when the optional `SP_API_TOKEN` is set, to
-remain compatible with future authenticated builds.
-
-Read the [official Super Productivity local REST API documentation](https://github.com/super-productivity/super-productivity/blob/master/docs/wiki/3.01-API.md)
-before changing the API URL or exposing a proxy. The upstream API is release-sensitive: this
-package's no-token default matches the [18.16.0 desktop release](https://github.com/super-productivity/super-productivity/releases/tag/v18.16.0),
-whose [released API handler](https://github.com/super-productivity/super-productivity/blob/v18.16.0/electron/local-rest-api.ts)
-does not authenticate task requests.
-
-## Install
-
-From the public npm registry:
-
-```bash
-npx -y super-productivity-mcp-server
-```
-
-End users do not need an npm account or an npm login to install the public package.
-
-For a local checkout:
-
-```bash
-pnpm install
-pnpm build
-node /absolute/path/to/super-productivity-mcp/dist/index.js
-```
-
-### Package and releases
-
-The public package is [`super-productivity-mcp-server`](https://www.npmjs.com/package/super-productivity-mcp-server).
-The GitHub release workflow publishes new versions when the repository has an `NPM_TOKEN` Actions
-secret. That maintainer-only credential is not needed by people installing or using the server.
-
-The server reads configuration from environment variables:
-
-| Variable                    | Default                 | Notes                                                               |
-| --------------------------- | ----------------------- | ------------------------------------------------------------------- |
-| `SP_API_TOKEN`              | —                       | Optional Bearer token for an authenticated Super Productivity build |
-| `SP_API_URL`                | `http://127.0.0.1:3876` | HTTP(S) URL; loopback is enforced by default                        |
-| `SP_API_TIMEOUT_MS`         | `15000`                 | Integer from 1000 to 60000                                          |
-| `SP_ALLOW_NON_LOOPBACK_URL` | `false`                 | Use only for a trusted local proxy                                  |
-| `SP_LOG_LEVEL`              | `warn`                  | `error`, `warn`, `info`, or `debug`                                 |
-
-See [.env.example](.env.example) for a copyable template.
-
-## Case A — Desktop application
-
-There are two Desktop applications people commonly mean here. They do **not** expose the same
-menu:
-
-- **ChatGPT Desktop:** has the graphical **Settings → MCP servers** menu.
-- **Codex Desktop:** some builds may not have an MCP menu. Use **Settings → Configuration → Open
-  config.toml** instead.
-
-Both variants start the same public npm package. You do not need an npm account or an npm login.
-
-### A1. ChatGPT Desktop — graphical setup
-
-Use this exact procedure in the ChatGPT Desktop application:
-
-1. Open **Settings → MCP servers**.
-2. Click **Add server**.
-3. Choose **STDIO**.
-4. Fill the fields as follows:
-
-   | Field                    | Value                                                              |
-   | ------------------------ | ------------------------------------------------------------------ |
-   | Name, if requested       | `super_productivity`                                               |
-   | Command                  | `npx`                                                              |
-   | Arguments                | `-y` and `super-productivity-mcp-server` as two separate arguments |
-   | `SP_API_URL`, optional   | `http://127.0.0.1:3876`                                            |
-   | `SP_LOG_LEVEL`, optional | `warn`                                                             |
-   | `SP_API_TOKEN`           | Leave empty for Super Productivity 18.16.0                         |
-
-5. Save the server and select **Restart** or restart ChatGPT Desktop if requested.
-6. In a chat, type `/mcp` to inspect connected servers, then ask:
-
-   ```text
-   Check the connection to Super Productivity with check_connection.
-   ```
-
-If **MCP servers** or **STDIO** is unavailable in ChatGPT Desktop, update the application or use
-the Codex Desktop configuration path below. For a local build, replace the command with `node`
-and use the absolute path to `dist/index.js`. See
-[examples/chatgpt-desktop.md](examples/chatgpt-desktop.md).
-
-### A2. Codex Desktop — configure `config.toml`, not an MCP menu
-
-If your Codex Desktop build does not show an **MCP servers** menu, do **not** look for it elsewhere
-in the settings. Use **Settings → Configuration → Open config.toml** instead:
-
-1. Open **Settings**.
-2. Select **Configuration** in the left sidebar.
-3. Select **Open config.toml**.
-4. Add this block and save the file:
-
-   ```toml
-   [mcp_servers.super_productivity]
-   command = "npx"
-   args = ["-y", "super-productivity-mcp-server"]
-   env = { SP_API_URL = "http://127.0.0.1:3876", SP_LOG_LEVEL = "warn" }
-   ```
-
-5. Fully quit and reopen Codex Desktop.
-6. Ask Codex:
-
-   ```text
-   Check the connection to Super Productivity with check_connection.
-   ```
-
-The shared file is normally `~/.codex/config.toml`. Codex Desktop, Codex CLI, and the IDE
-extension use the same configuration layers. For a local checkout, replace the block with:
+Codex Desktop and CLI use the shared `config.toml` configuration. For a local fork checkout, add this block and replace the example path:
 
 ```toml
 [mcp_servers.super_productivity]
 command = "node"
-args = ["/absolute/path/to/super-productivity-mcp/dist/index.js"]
+args = ["/path/to/super-productivity-mcp/dist/index.js"]
+env = { SP_API_URL = "http://127.0.0.1:3876", SP_LOG_LEVEL = "warn" }
 ```
 
-## Case B — Codex CLI in Terminal
+Restart the MCP host and use `check_connection`. The server accepts these environment variables:
 
-Use this case only if you want to work from the Codex CLI. The Desktop procedure above does not
-require the `codex` command.
+| Variable                    | Default                         | Purpose                                                     |
+| --------------------------- | ------------------------------- | ----------------------------------------------------------- |
+| `SP_API_URL`                | `http://127.0.0.1:3876`         | Stock local REST API base URL; loopback required by default |
+| `SP_API_TOKEN`              | unset                           | Optional Bearer token for authenticated app builds          |
+| `SP_SEMANTIC_API_URL`       | `http://127.0.0.1:3876/bridge/` | Enhanced semantic API base URL                              |
+| `SP_API_TIMEOUT_MS`         | `15000`                         | Request timeout, integer from 1000 to 60000                 |
+| `SP_ALLOW_NON_LOOPBACK_URL` | `false`                         | Allows a trusted local proxy when explicitly enabled        |
+| `SP_LOG_LEVEL`              | `warn`                          | `error`, `warn`, `info`, or `debug`                         |
 
-1. In the same Terminal where you will use Codex, run:
+## Security and privacy
 
-   ```bash
-   codex --version
-   ```
+- MCP uses STDIO; stdout is reserved for protocol messages and diagnostics go to stderr.
+- Both configured API URLs must be loopback unless `SP_ALLOW_NON_LOOPBACK_URL=true` is deliberately set for a trusted local proxy.
+- `/health` is unauthenticated. Protected routes use the optional app token when required by that build. The stock 18.16.0 app API does not require a token; keep it on loopback because local apps under the same user can access it.
+- Tokens are not logged, and token-like values are redacted from diagnostics.
+- The app extension exposes explicit, validated operations. It does not provide a generic state setter or arbitrary service invocation.
+- No local file attachment path can be added or read through the MCP. Image attachments may cause renderer network access, so remote image mutation is not offered.
+- The server makes no background requests to GitHub. `ensure_github_issue_task` only parses a supplied issue reference and searches/updates local tasks.
 
-   If Terminal prints `zsh: command not found: codex`, stop and use [Case A](#case-a--desktop-application).
-   If you specifically want the CLI, install it using the
-   [official Codex CLI instructions](https://learn.chatgpt.com/docs/codex/cli), open a new
-   Terminal, and run `codex --version` again.
+## Compatibility and limitations
 
-2. Once `codex --version` works, copy this complete command:
+Stock behavior follows the versioned local REST API exposed by the installed desktop app. The no-token setup matches the released 18.16.0 handler. Enhanced behavior was built and live-tested against Super Productivity 19.1.0 source at commit `54a3793`; it requires a compatible app build with the enhanced route set. Capability discovery allows the package to run against stock builds without pretending those writes are available.
 
-   ```bash
-   codex mcp add super_productivity --env SP_API_URL=http://127.0.0.1:3876 --env SP_LOG_LEVEL=warn -- npx -y super-productivity-mcp-server
-   ```
-
-3. Verify the registration and start the CLI:
-
-   ```bash
-   codex mcp list
-   codex
-   ```
-
-4. Inside Codex, type `/mcp` and ask:
-
-   ```text
-   Check the connection to Super Productivity with check_connection.
-   ```
-
-See [examples/codex-config.toml](examples/codex-config.toml) for the shared configuration format
-and the [official OpenAI MCP setup documentation](https://learn.chatgpt.com/docs/extend/mcp) for
-the current Codex configuration surfaces.
+Recurrence writes are intentionally unsupported because recurrence configuration drives generated task lifecycle, exceptions, schedule cursors, completion gates, and templates. Local file/image attachment writes and attachment binary transfer are unavailable. Provider-specific issue metadata and board/section membership are not writable through these tools. Details and verification status are in [docs/FEATURES.md](docs/FEATURES.md).
 
 ## Troubleshooting
 
-### I cannot find “Enable local REST API”
+- **`ECONNREFUSED 127.0.0.1:3876`:** open the Super Productivity desktop app, enable its local REST API, and wait for the renderer to finish starting.
+- **`401 Unauthorized`:** only set `SP_API_TOKEN` to the token from an app build that requires one. The stock 18.16.0 API does not require a token.
+- **Enhanced capability unavailable:** expected on a released stock app. Use the compatible modified app build for that operation; ordinary stock-mode tools remain available.
+- **Ambiguous project/tag name:** use the exact ID returned by the corresponding list tool.
 
-Confirm that you are using the **desktop** app, not the web or mobile app, and that its version is
-18.x or newer. Quit and update it from the [official Super Productivity releases](https://github.com/super-productivity/super-productivity/releases/latest),
-then return to **Settings → Misc Settings**. This setting is not present in older desktop builds.
+## Windows native setup
 
-### I can enable the API, but I do not see a token
+The app source and MCP server use different Node targets. Super Productivity pins Node 22.18.0 in its .nvmrc; the MCP supports Node 20 and newer and was verified here on Node 24 with pnpm 10.12.4. Keep those runtimes local to their checkouts when needed instead of replacing a working system Node installation.
 
-That is expected with the released Super Productivity 18.16.0 desktop app. Its local API is bound
-to loopback and does not require a token, so leave `SP_API_TOKEN` unset. Do not use an npm or GitHub
-token in its place. A future Super Productivity build may expose an Access Token; use it only when
-the app itself displays one.
+For an app build, place a portable Node 22.18.0 distribution first on the current PowerShell process PATH, then build from the native app checkout:
 
-In `check_connection`, `configured: true` means the local API and renderer are ready. The separate
-`tokenConfigured: false` field is expected for this no-token setup.
-
-### `ECONNREFUSED 127.0.0.1:3876`
-
-Super Productivity is closed, the local API is disabled, or the renderer has not finished starting.
-Keep the desktop app open, enable the API, wait a few seconds, and retry `check_connection`.
-
-### `401 Unauthorized`
-
-This only applies when using a Super Productivity build that requires a Bearer token. Copy the
-current Access Token from that app, set it as `SP_API_TOKEN`, and restart the MCP host. Do not use
-the npm publication token here.
-
-### The server does not appear in the MCP client
-
-Check that Node.js 20 or newer is installed, that the command is exactly `npx` with arguments
-`-y super-productivity-mcp-server`, and restart the MCP host. The server speaks MCP over STDIO, so
-normal diagnostics go to stderr rather than appearing as a regular terminal application.
-
-### Terminal says `zsh: command not found: codex`
-
-That message only means the optional Codex CLI is unavailable in that Terminal. If you use the
-Codex Desktop application, configure the server from **Settings → Configuration → Open config.toml**;
-no `codex` command is needed. If you intended to use the CLI,
-follow the [official Codex CLI installation instructions](https://learn.chatgpt.com/docs/codex/cli),
-open a new Terminal, and confirm `codex --version` before running `codex mcp add`.
-
-### I cannot find “MCP servers” in Desktop settings
-
-That menu belongs to the **ChatGPT Desktop** MCP flow. The current Codex Desktop settings panel may
-not expose it. In Codex Desktop, select **Configuration** in the settings sidebar and then choose
-**Open config.toml**. Add the `[mcp_servers.super_productivity]` block from [Case A](#case-a--desktop-application),
-restart Codex Desktop, and ask it to call `check_connection`.
-
-### `check_connection` succeeds but no tasks are returned
-
-Use `search_tasks` with a distinctive part of an existing task title. State-changing tools require
-the exact `taskId` returned by that search; the server never guesses a task or bulk-imports issues.
-
-## GitHub issue association
-
-Call the tool explicitly with either form:
-
-```text
-ensure_github_issue_task({ issue: "Amorem/my-repo#123" })
-ensure_github_issue_task({ issue: "https://github.com/Amorem/my-repo/issues/123", planToday: true })
+```powershell
+$node22Root = 'C:\Users\YOURNAME\Documents\Dev\.tools\node-v22.18.0-win-x64'
+$env:PATH = "$node22Root;$env:PATH"
+node --version
+npm ci
+npm run dist:win
 ```
 
-The server searches active, archived, and completed local tasks. It reuses a task containing its
-stable marker or exact issue URL. If no safe match exists, it creates one task with a marker and
-returns its ID. Repeating the same call is idempotent. `planToday` defaults to `false` and must be
-set explicitly.
+The Windows artifacts are written under .tmp/app-builds. The configured Windows targets include x64 and ARM64. The unpacked x64 app can be started directly for isolated testing; installing the generated installer is not required for an MCP development check.
 
-The current Super Productivity local REST API does not expose writable GitHub provider fields in
-its task PATCH allowlist. For that reason, tasks created by this server use a private, visible-in-
-notes marker; native GitHub-linked tasks are recognized when the local API exposes an unambiguous
-GitHub issue number. If two native tasks could match, the server returns an ambiguity error instead
-of choosing silently. No GitHub token or GitHub network request is required by this server.
+From the MCP checkout, install and verify the server with:
 
-## Security model
-
-- STDIO stdout is reserved for MCP protocol messages; diagnostics go to stderr.
-- `SP_API_TOKEN` is optional; when supplied, it is never printed and is redacted in error/log paths.
-- The configured API URL must be loopback unless `SP_ALLOW_NON_LOOPBACK_URL=true` is explicitly set.
-- Super Productivity 18.16.0's local API has no application-level authentication. Keep the API on
-  loopback and remember that local applications running as the same user can read and modify tasks.
-- If a future build provides a local API token, protect the environment and configuration that can
-  access it.
-- The server does not import all GitHub issues, poll GitHub, or perform background actions.
-- All task mutations require an exact `taskId`, except the explicit, idempotent GitHub association
-  tool which creates at most one marked task.
-
-## Architecture
-
-```mermaid
-sequenceDiagram
-    participant Host as ChatGPT Desktop / Codex
-    participant MCP as super-productivity-mcp-server
-    participant SP as Super Productivity
-
-    Host->>MCP: search_tasks({query})
-    MCP->>SP: GET /tasks?query=...
-    SP-->>MCP: task list with IDs
-    MCP-->>Host: IDs and safe summaries
-    Host->>MCP: plan_task_today({taskId})
-    MCP->>SP: PATCH /tasks/:id {dueDay: today}
-    Host->>MCP: start_task({taskId})
-    MCP->>SP: POST /tasks/:id/start
-    Host->>MCP: stop_timer() / complete_task({taskId})
-    MCP->>SP: POST /task-control/stop or PATCH /tasks/:id
+```powershell
+corepack pnpm install --frozen-lockfile
+corepack pnpm verify
+corepack pnpm smoke:package
 ```
 
-Implementation boundaries are intentionally narrow:
+The package smoke test installs the packed tarball in a fresh temporary directory, checks the STDIO handshake and all 29 tools, and uses an ephemeral diagnostic port. It does not need the desktop app or port 3876.
 
-- `src/sp-client.ts` is the typed, timeout-bound REST client.
-- `src/server.ts` contains MCP schemas and explicit tool behavior.
-- `src/github.ts` parses and deduplicates issue references without GitHub network access.
-- `src/config.ts`, `src/errors.ts`, and `src/logger.ts` enforce safe configuration and diagnostics.
+For a local Codex setup, copy the template in [examples/windows-codex-config.toml](examples/windows-codex-config.toml) and replace the checkout path. It contains no token. Keep SP_API_URL and SP_SEMANTIC_API_URL on loopback, and pass SP_API_TOKEN through the host environment only when the app build requires one. Enable the app local REST API in its settings before connecting. Only one API-enabled app instance can use port 3876 at a time.
 
-## Development
+The checked-in live smoke script currently runs on Linux/WSL. The Windows live API check for this release candidate used the unpacked x64 build and a disposable user-data directory; the exact setup and outcomes are recorded in [docs/RELEASE_RUNBOOK.md](docs/RELEASE_RUNBOOK.md).
+
+## Development and verification
+
+Use Node.js 24 and pnpm 10.12.4 for the verified development setup:
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm verify
+pnpm pack:check
 ```
 
-`pnpm verify` runs lint, formatting checks, strict TypeScript typechecking, unit/integration tests,
-and the production build. The test suite uses mocked REST responses and the official MCP SDK's
-in-memory transport; it never contacts Super Productivity or GitHub.
+`pnpm verify` runs lint, formatting, typecheck, tests, and build. `pnpm pack:check` builds and inspects the npm package contents. Unit and in-memory integration tests do not require the desktop app. Live enhanced checks require a deliberately disposable app profile. The guarded `pnpm smoke:live` script refuses to run without explicit destructive-test opt-in and a free API port; see `docs/RELEASE_RUNBOOK.md` in the repository.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow and
-[SECURITY.md](SECURITY.md) for vulnerability reports.
+## License and credits
 
-## Roadmap
-
-- Add a safe provider-aware lookup when Super Productivity exposes issue-provider configuration via
-  the local API.
-- Add optional GitHub metadata enrichment behind an explicit, separately configured connector.
-- Add a small interactive setup command that validates the local API without storing the token.
-- Add compatibility fixtures for each supported Super Productivity API revision.
-
-## License
-
-MIT. See [LICENSE](LICENSE).
+This MCP project is distributed under the MIT License; see [LICENSE](LICENSE). It is an independent integration for Super Productivity and is not an official project endorsement. The separately proposed app changes are based on the Super Productivity source repository, also MIT licensed, and retain its existing copyright and license notice in that repository. See [the provenance note](docs/UPSTREAM_PROPOSAL.md).

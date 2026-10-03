@@ -7,6 +7,7 @@ export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 export interface AppConfig {
   readonly apiUrl: URL;
   readonly apiToken?: string;
+  readonly semanticApiUrl: URL;
   readonly apiTimeoutMs: number;
   readonly allowNonLoopbackUrl: boolean;
   readonly logLevel: LogLevel;
@@ -76,9 +77,16 @@ export const loadConfig = (env: NodeJS.ProcessEnv = process.env): AppConfig => {
   );
   const token = env.SP_API_TOKEN?.trim();
 
+  const apiUrl = parseApiUrl(env.SP_API_URL, allowNonLoopbackUrl);
+  const semanticApiUrl = parseApiUrl(
+    env.SP_SEMANTIC_API_URL?.trim() || `${apiUrl.toString()}bridge/`,
+    allowNonLoopbackUrl,
+  );
+  if (!semanticApiUrl.pathname.endsWith('/')) semanticApiUrl.pathname += '/';
   return {
-    apiUrl: parseApiUrl(env.SP_API_URL, allowNonLoopbackUrl),
+    apiUrl,
     ...(token ? { apiToken: token } : {}),
+    semanticApiUrl,
     apiTimeoutMs: parseTimeout(env.SP_API_TIMEOUT_MS),
     allowNonLoopbackUrl,
     logLevel: parseLogLevel(env.SP_LOG_LEVEL),

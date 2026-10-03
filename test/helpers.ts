@@ -4,6 +4,7 @@ import { SpTaskSchema, type SpTask } from '../src/types.js';
 
 export const testConfig = (overrides: Partial<AppConfig> = {}): AppConfig => ({
   apiUrl: new URL('http://127.0.0.1:3876'),
+  semanticApiUrl: new URL('http://127.0.0.1:3876/bridge/'),
   apiToken: 'test-token',
   apiTimeoutMs: 1_000,
   allowNonLoopbackUrl: false,

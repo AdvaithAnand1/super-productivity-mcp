@@ -1,0 +1,9 @@
+# Copy this block to the local Codex config and replace YOURNAME with the Windows account folder.
+# The token is deliberately omitted; never paste a token value into this file.
+
+[mcp_servers.super_productivity]
+command = "node"
+args = ["C:/Users/YOURNAME/Documents/Dev/super-productivity-mcp/dist/index.js"]
+env = { SP_API_URL = "http://127.0.0.1:3876", SP_SEMANTIC_API_URL = "http://127.0.0.1:3876/bridge/", SP_LOG_LEVEL = "warn" }
+# For a token-enabled app, expose an existing SP_API_TOKEN environment variable instead:
+# env_vars = ["SP_API_TOKEN"]

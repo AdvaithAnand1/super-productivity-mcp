@@ -11,11 +11,11 @@ visible, update Super Productivity first from its [official releases](https://gi
 2. Enable **Enable local REST API**.
 3. Open ChatGPT Desktop settings and choose **MCP servers → Add server**.
 4. Select **STDIO**.
-5. Use:
+5. For this GitHub fork, use the local build:
 
-   - Command: `npx`
-   - Arguments: `-y`, `super-productivity-mcp-server`
-   - Environment: leave empty for Super Productivity 18.16.0
+   - Command: `node`
+   - Arguments: the absolute path to `dist/index.js` in your cloned and built checkout
+   - Environment: set `SP_API_URL` to `http://127.0.0.1:3876`; leave the token unset for Super Productivity 18.16.0
 
 6. Save, restart ChatGPT Desktop if requested, and ask it to run `check_connection`.
 
@@ -26,6 +26,6 @@ If the check returns `ECONNREFUSED`, keep Super Productivity open and confirm th
 enabled. A `401` only applies to a future token-enabled build; set `SP_API_TOKEN` from that app and
 restart the MCP server.
 
-For a local checkout, use `node` as the command and the absolute path to `dist/index.js` as its
-argument. If a token is required by your build, keep it in the MCP server environment rather than
-in a committed configuration file.
+The command `npx -y super-productivity-mcp-server` installs the original published npm release,
+not this GitHub fork. If a token is required by your app build, keep it in the MCP server
+environment rather than in a committed configuration file.

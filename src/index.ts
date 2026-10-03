@@ -11,7 +11,8 @@ const main = (): void => {
     const config = loadConfig();
     const logger = createLogger(config.logLevel);
     const client = new SuperProductivityClient(config, logger);
-    startStdioServer({ config, client, logger });
+    const semanticApiClient = new SuperProductivityClient(config, logger);
+    startStdioServer({ config, client, semanticApiClient, logger });
     logger.info('MCP server started on stdio', {
       apiUrl: config.apiUrl.toString(),
       tokenConfigured: Boolean(config.apiToken),

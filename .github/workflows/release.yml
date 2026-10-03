@@ -37,6 +37,12 @@ jobs:
       - name: Verify release
         run: pnpm verify
 
+      - name: Check package contents
+        run: pnpm pack:check
+
+      - name: Install and smoke-test packed package
+        run: pnpm smoke:package
+
       - name: Publish to npm
         if: ${{ env.NPM_TOKEN != '' }}
         run: npm publish --access public
